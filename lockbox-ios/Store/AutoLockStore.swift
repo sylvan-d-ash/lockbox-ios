@@ -115,7 +115,7 @@ extension AutoLockStore {
                     selector: #selector(lockApp),
                     userInfo: nil,
                     repeats: false)
-        } else if timerValue != 0 && timerValue < Date().timeIntervalSince1970 {
+        } else if timerValue != 0 && timerValue <= Date().timeIntervalSince1970 {
             self.lockApp()
         } else {
             self.timer = Timer(timeInterval: TimeInterval(seconds),
