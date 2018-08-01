@@ -64,7 +64,7 @@ class RootPresenter {
 
         // todo: update tests with populated oauth and profile info
         Observable.combineLatest(self.accountStore.oauthInfo, self.accountStore.profile)
-            .bind { latest in
+                .bind { latest in
                     if let oauthInfo = latest.0,
                         let profile = latest.1 {
                         self.dataStoreActionHandler.invoke(.updateCredentials(oauthInfo: oauthInfo, fxaProfile: profile))
@@ -74,29 +74,13 @@ class RootPresenter {
                 }
                 .disposed(by: self.disposeBag)
 
-        self.dataStore.storageState
-            .subscribe(onNext: { storageState in
-                    switch storageState {
-                    case .Unprepared, .Locked:
-                        self.routeActionHandler.invoke(LoginRouteAction.welcome)
-                    case .Unlocked:
-                        self.routeActionHandler.invoke(MainRouteAction.list)
-                    default:
-                        break
-                    }
+        self.dataStore.locked
+                .subscribe(onNext: { locked in
+                    let route: RouteAction = locked ? LoginRouteAction.welcome : MainRouteAction.list
+
+                    self.routeActionHandler.invoke(route)
                 })
                 .disposed(by: self.disposeBag)
-
-        Observable.combineLatest(self.dataStore.syncState, self.dataStore.storageState)
-            .filter { $0.1 == LoginStoreState.Unprepared }
-            .map { $0.0 }
-            .distinctUntilChanged()
-            .subscribe(onNext: { syncState in
-                if syncState == .NotSyncable {
-                    self.routeActionHandler.invoke(LoginRouteAction.welcome)
-                }
-            })
-            .disposed(by: self.disposeBag)
 
         if userDefaults.value(forKey: SettingKey.itemListSort.rawValue) == nil {
             self.userDefaults.set(Constant.setting.defaultItemListSort.rawValue,

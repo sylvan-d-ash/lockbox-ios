@@ -125,6 +125,7 @@ extension WelcomePresenter {
 
     private var oauthLoginConfirmationObserver: AnyObserver<Void> {
         return Binder(self) { target, _ in
+            target.dataStoreActionHandler.invoke(.reset)
             target.routeActionHandler.invoke(LoginRouteAction.fxa)
             target.accountActionHandler.invoke(AccountAction.oauthSignInMessageRead)
         }.asObserver()

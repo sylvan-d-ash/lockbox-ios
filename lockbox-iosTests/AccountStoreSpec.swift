@@ -223,7 +223,7 @@ class AccountStoreSpec: QuickSpec {
                 }
 
                 it("clears keychain values associated with old accounts") {
-                    for key in [KeychainKey.displayName, KeychainKey.avatarURL, KeychainKey.email] {
+                    for key in KeychainKey.allValues {
                         expect(self.keychainManager.removeArguments).to(contain(key.rawValue))
                     }
 

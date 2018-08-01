@@ -87,8 +87,10 @@ class AccountStore {
                            redirectUri: Constant.fxa.redirectURI)
 
                     self.generateLoginURL()
-                    self.populateAccountInformation()
                 }
+
+                self._oauthInfo.onNext(nil)
+                self._profile.onNext(nil)
             }
         }
 
@@ -141,8 +143,12 @@ extension AccountStore {
     }
     
     private func clearOldKeychainValues() {
-        for identifier in [KeychainKey.displayName, KeychainKey.avatarURL, KeychainKey.email] {
+        for identifier in KeychainKey.allValues {
             _ = self.keychainWrapper.removeObject(forKey: identifier.rawValue)
+        }
+
+        self.webData.fetchDataRecords(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes()) { records in
+            self.webData.removeData(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes(), for: records) { }
         }
 
         self._oldAccountPresence.onNext(false)

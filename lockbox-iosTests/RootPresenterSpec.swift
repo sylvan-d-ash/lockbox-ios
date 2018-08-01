@@ -239,103 +239,25 @@ class RootPresenterSpec: QuickSpec {
                 }
             }
 
-            describe("when the datastore state changes, regardless of synced state") {
-                it("routes to the welcome view") {
-                    self.dataStore.storageStateSubject.onNext(.Unprepared)
-                    let arg = self.routeActionHandler.invokeArgument as! LoginRouteAction
-                    expect(arg).to(equal(LoginRouteAction.welcome))
-                }
-
-                it("routes to the welcome view") {
-                    self.dataStore.storageStateSubject.onNext(.Locked)
-                    let arg = self.routeActionHandler.invokeArgument as! LoginRouteAction
-                    expect(arg).to(equal(LoginRouteAction.welcome))
-                }
-
-                it("routes to the list view") {
-                    self.dataStore.storageStateSubject.onNext(.Unlocked)
-                    let arg = self.routeActionHandler.invokeArgument as! MainRouteAction
-                    expect(arg).to(equal(MainRouteAction.list))
-                }
-            }
-
-            describe("when the datastore is locked, regardless of synced state") {
-                beforeEach {
-                    self.dataStore.storageStateSubject.onNext(.Locked)
-                    let arg = self.routeActionHandler.invokeArgument as! LoginRouteAction
-                    expect(arg).to(equal(LoginRouteAction.welcome))
-                }
-
-                it("routes to the welcome view") {
-                    self.dataStore.syncSubject.onNext(.NotSyncable)
-                    let arg = self.routeActionHandler.invokeArgument as! LoginRouteAction
-                    expect(arg).to(equal(LoginRouteAction.welcome))
-                }
-
-                it("routes to the welcome view") {
-                    self.dataStore.syncSubject.onNext(.ReadyToSync)
-                    let arg = self.routeActionHandler.invokeArgument as! LoginRouteAction
-                    expect(arg).to(equal(LoginRouteAction.welcome))
-                }
-
-                it("routes to the welcome view") {
-                    self.dataStore.syncSubject.onNext(.Synced)
-                    let arg = self.routeActionHandler.invokeArgument as! LoginRouteAction
-                    expect(arg).to(equal(LoginRouteAction.welcome))
-                }
-
-                it("routes to the welcome view") {
-                    self.dataStore.syncSubject.onNext(.Syncing)
-                    let arg = self.routeActionHandler.invokeArgument as! LoginRouteAction
-                    expect(arg).to(equal(LoginRouteAction.welcome))
-                }
-            }
-
             describe("when the datastore is unlocked") {
                 beforeEach {
                     self.dataStore.lockedSubject.onNext(false)
                 }
 
-                describe("when the datastore is not syncable and unprepared") {
-                    beforeEach {
-                        self.dataStore.storageStateSubject.onNext(.Unprepared)
-                        self.dataStore.syncSubject.onNext(.NotSyncable)
-                    }
+                it("routes to the list") {
+                    let arg = self.routeActionHandler.invokeArgument as! MainRouteAction
+                    expect(arg).to(equal(MainRouteAction.list))
+                }
+            }
 
-                    it("displays the welcome screen") {
-                        let arg = self.routeActionHandler.invokeArgument as! LoginRouteAction
-                        expect(arg).to(equal(LoginRouteAction.welcome))
-                    }
+            describe("when the datastore is locked") {
+                beforeEach {
+                    self.dataStore.lockedSubject.onNext(true)
                 }
 
-                describe("any other storage state + sync state value") {
-                    it("routes to the list") {
-                        self.dataStore.storageStateSubject.onNext(.Unlocked)
-                        self.dataStore.syncSubject.onNext(.ReadyToSync)
-                        let arg = self.routeActionHandler.invokeArgument as! MainRouteAction
-                        expect(arg).to(equal(MainRouteAction.list))
-                    }
-
-                    it("routes to the list") {
-                        self.dataStore.storageStateSubject.onNext(.Unlocked)
-                        self.dataStore.syncSubject.onNext(.Syncing)
-                        let arg = self.routeActionHandler.invokeArgument as! MainRouteAction
-                        expect(arg).to(equal(MainRouteAction.list))
-                    }
-
-                    it("routes to the list") {
-                        self.dataStore.storageStateSubject.onNext(.Unlocked)
-                        self.dataStore.syncSubject.onNext(.Synced)
-                        let arg = self.routeActionHandler.invokeArgument as! MainRouteAction
-                        expect(arg).to(equal(MainRouteAction.list))
-                    }
-
-                    it("routes to the list") {
-                        self.dataStore.storageStateSubject.onNext(.Unlocked)
-                        self.dataStore.syncSubject.onNext(.NotSyncable)
-                        let arg = self.routeActionHandler.invokeArgument as! MainRouteAction
-                        expect(arg).to(equal(MainRouteAction.list))
-                    }
+                it("routes to the welcome screen") {
+                    let arg = self.routeActionHandler.invokeArgument as! LoginRouteAction
+                    expect(arg).to(equal(LoginRouteAction.welcome))
                 }
             }
 
