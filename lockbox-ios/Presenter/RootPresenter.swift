@@ -62,11 +62,14 @@ class RootPresenter {
         self.telemetryActionHandler = telemetryActionHandler
         self.biometryManager = biometryManager
 
+        // todo: update tests with populated oauth and profile info
         Observable.combineLatest(self.accountStore.oauthInfo, self.accountStore.profile)
             .bind { latest in
                     if let oauthInfo = latest.0,
                         let profile = latest.1 {
                         self.dataStoreActionHandler.invoke(.updateCredentials(oauthInfo: oauthInfo, fxaProfile: profile))
+                    } else if latest.0 == nil {
+                        self.routeActionHandler.invoke(LoginRouteAction.welcome)
                     }
                 }
                 .disposed(by: self.disposeBag)

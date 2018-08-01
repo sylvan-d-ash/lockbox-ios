@@ -8,6 +8,7 @@ import Nimble
 import RxSwift
 import RxTest
 import UIKit
+import FxAClient
 
 @testable import Lockbox
 
@@ -117,6 +118,19 @@ class RootPresenterSpec: QuickSpec {
         }
     }
 
+    class FakeAccountStore: AccountStore {
+        let oauthInfoStub = PublishSubject<OAuthInfo?>()
+        let profileInfoStub = PublishSubject<Profile?>()
+
+        override var oauthInfo: Observable<OAuthInfo?> {
+            return self.oauthInfoStub.asObservable()
+        }
+
+        override var profile: Observable<Profile?> {
+            return self.profileInfoStub.asObservable()
+        }
+    }
+
     class FakeRouteActionHandler: RouteActionHandler {
         var invokeArgument: RouteAction?
 
@@ -158,6 +172,7 @@ class RootPresenterSpec: QuickSpec {
     private var routeStore: FakeRouteStore!
     private var dataStore: FakeDataStore!
     private var telemetryStore: FakeTelemetryStore!
+    private var accountStore: FakeAccountStore!
     private var routeActionHandler: FakeRouteActionHandler!
     private var telemetryActionHandler: FakeTelemetryActionHandler!
     private var dataStoreActionHandler: FakeDataStoreActionHandler!
@@ -172,6 +187,7 @@ class RootPresenterSpec: QuickSpec {
                 self.routeStore = FakeRouteStore()
                 self.dataStore = FakeDataStore()
                 self.telemetryStore = FakeTelemetryStore()
+                self.accountStore = FakeAccountStore()
                 self.routeActionHandler = FakeRouteActionHandler()
                 self.telemetryActionHandler = FakeTelemetryActionHandler()
                 self.dataStoreActionHandler = FakeDataStoreActionHandler()
@@ -184,6 +200,7 @@ class RootPresenterSpec: QuickSpec {
                         routeStore: self.routeStore,
                         dataStore: self.dataStore,
                         telemetryStore: self.telemetryStore,
+                        accountStore: self.accountStore,
                         routeActionHandler: self.routeActionHandler,
                         telemetryActionHandler: self.telemetryActionHandler,
                         biometryManager: self.biometryManager
@@ -207,6 +224,18 @@ class RootPresenterSpec: QuickSpec {
 
                 it("sets the key") {
                     expect(UserDefaults.standard.object(forKey: SettingKey.itemListSort.rawValue) as! String).to(equal(Constant.setting.defaultItemListSort.rawValue))
+                }
+            }
+
+            describe("when the oauth info is not available") {
+                beforeEach {
+                    self.accountStore.oauthInfoStub.onNext(nil)
+                    self.accountStore.profileInfoStub.onNext(nil)
+                }
+
+                it("routes to the welcome view") {
+                    let arg = self.routeActionHandler.invokeArgument as! LoginRouteAction
+                    expect(arg).to(equal(LoginRouteAction.welcome))
                 }
             }
 
