@@ -39,6 +39,7 @@ class WelcomePresenter {
     private let dataStoreActionHandler: DataStoreActionHandler
     private let userInfoActionHandler: AccountActionHandler
     private let linkActionHandler: LinkActionHandler
+    private let accountActionHandler: AccountActionHandler
     private let accountStore: AccountStore
     private let dataStore: DataStore
     private let lifecycleStore: LifecycleStore
@@ -50,6 +51,7 @@ class WelcomePresenter {
          dataStoreActionHandler: DataStoreActionHandler = DataStoreActionHandler.shared,
          userInfoActionHandler: AccountActionHandler = AccountActionHandler.shared,
          linkActionHandler: LinkActionHandler = LinkActionHandler.shared,
+         accountActionHandler: AccountActionHandler = AccountActionHandler.shared,
          accountStore: AccountStore = AccountStore.shared,
          dataStore: DataStore = DataStore.shared,
          lifecycleStore: LifecycleStore = LifecycleStore.shared,
@@ -59,6 +61,7 @@ class WelcomePresenter {
         self.dataStoreActionHandler = dataStoreActionHandler
         self.userInfoActionHandler = userInfoActionHandler
         self.linkActionHandler = linkActionHandler
+        self.accountActionHandler = accountActionHandler
         self.accountStore = accountStore
         self.dataStore = dataStore
         self.lifecycleStore = lifecycleStore
@@ -87,6 +90,57 @@ class WelcomePresenter {
                         returnRoute: LoginRouteAction.welcome))
             })
             .disposed(by: self.disposeBag)
+
+        self.accountStore.hasOldAccountInformation
+            .filter { $0 }
+            .subscribe { _ in
+                self.view?.displayAlertController(
+                        buttons: [
+                            AlertActionButtonConfiguration(
+                                    title: Constant.string.continueText,
+                                    tapObserver: self.oauthLoginConfirmationObserver,
+                                    style: .default)
+                        ],
+                        title: Constant.string.reauthenticationRequired,
+                        message: Constant.string.appUpdateDisclaimer,
+                        style: .alert)
+            }
+            .disposed(by: self.disposeBag)
+    }
+
+}
+
+extension WelcomePresenter {
+    private var skipButtonObserver: AnyObserver<Void> {
+        return Binder(self) { target, _ in
+            target.routeActionHandler.invoke(LoginRouteAction.fxa)
+        }.asObserver()
+    }
+
+    private var setPasscodeButtonObserver: AnyObserver<Void> {
+        return Binder(self) { target, _ in
+            target.linkActionHandler.invoke(SettingLinkAction.touchIDPasscode)
+        }.asObserver()
+    }
+
+    private var oauthLoginConfirmationObserver: AnyObserver<Void> {
+        return Binder(self) { target, _ in
+            target.routeActionHandler.invoke(LoginRouteAction.fxa)
+            target.accountActionHandler.invoke(AccountAction.oauthSignInMessageRead)
+        }.asObserver()
+    }
+
+    private var passcodeButtonsConfiguration: [AlertActionButtonConfiguration] {
+        return [
+            AlertActionButtonConfiguration(
+                    title: Constant.string.skip,
+                    tapObserver: self.skipButtonObserver,
+                    style: .cancel),
+            AlertActionButtonConfiguration(
+                    title: Constant.string.setPasscode,
+                    tapObserver: self.setPasscodeButtonObserver,
+                    style: .default)
+        ]
     }
 
     private func setupBiometricLaunchers() {
@@ -107,40 +161,13 @@ class WelcomePresenter {
         guard let view = self.view else { return }
 
         let biometricButtonTapObservable = Observable.combineLatest(
-                    self.accountStore.profile,
-                    self.dataStore.locked.distinctUntilChanged(),
-                    view.unlockButtonPressed.asObservable()
+                        self.accountStore.profile,
+                        self.dataStore.locked.distinctUntilChanged(),
+                        view.unlockButtonPressed.asObservable()
                 )
                 .map { ($0.0, $0.1) }
 
         self.handleBiometrics(biometricButtonTapObservable)
-    }
-}
-
-extension WelcomePresenter {
-    private var skipButtonObserver: AnyObserver<Void> {
-        return Binder(self) { target, _ in
-            target.routeActionHandler.invoke(LoginRouteAction.fxa)
-        }.asObserver()
-    }
-
-    private var setPasscodeButtonObserver: AnyObserver<Void> {
-        return Binder(self) { target, _ in
-            target.linkActionHandler.invoke(SettingLinkAction.touchIDPasscode)
-        }.asObserver()
-    }
-
-    private var passcodeButtonsConfiguration: [AlertActionButtonConfiguration] {
-        return [
-            AlertActionButtonConfiguration(
-                    title: Constant.string.skip,
-                    tapObserver: self.skipButtonObserver,
-                    style: .cancel),
-            AlertActionButtonConfiguration(
-                    title: Constant.string.setPasscode,
-                    tapObserver: self.setPasscodeButtonObserver,
-                    style: .default)
-        ]
     }
 
     private func launchPasscodePrompt() {

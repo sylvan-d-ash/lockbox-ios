@@ -107,6 +107,9 @@ struct Constant {
         static let doneSyncingYourEntries = NSLocalizedString("syncing_entries", value: "Done syncing your entries", comment: "Accessibility callout for finishing syncing your entries")
         static let installBrowserAccessibilityLabel = NSLocalizedString("install_browser_prompt", value: "%@ disabled, install this browser to make it available", comment: "Accessibility instructions for disabled web browser options")
         static let onboardingSecurityPostfix = NSLocalizedString("onboarding.encryption", value: "256-bit encryption", comment: "Name of link to algorithm used by Lockbox for encryption")
+        static let reauthenticationRequired = NSLocalizedString("reauth_required", value: "Reauthentication Required", comment: "Title of dialog box displayed when users need to reauthenticate")
+        static let appUpdateDisclaimer = NSLocalizedString("app_update_explanation", value: "Due to a recent app update, we will need you to sign in again. Apologies for the inconvenience.", comment: "Message in dialog box when users need to reauthenticate explaining application update")
+        static let continueText = NSLocalizedString("continue", value: "Continue", comment: "Button title when agreeing to proceed to access Lockbox.")
     }
 
     struct number {

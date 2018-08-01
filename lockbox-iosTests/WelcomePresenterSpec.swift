@@ -102,11 +102,24 @@ class WelcomePresenterSpec: QuickSpec {
         }
     }
 
+    class FakeAccountActionHandler: AccountActionHandler {
+        var invokeArgument: AccountAction?
+
+        override func invoke(_ action: AccountAction) {
+            self.invokeArgument = action
+        }
+    }
+
     class FakeAccountStore: AccountStore {
         var fakeProfile = PublishSubject<Profile?>()
+        var fakeOldAccountInformation = PublishSubject<Bool>()
 
         override var profile: Observable<Profile?> {
             return self.fakeProfile.asObservable()
+        }
+
+        override var hasOldAccountInformation: Observable<Bool> {
+            return self.fakeOldAccountInformation.asObservable()
         }
     }
 
@@ -155,6 +168,7 @@ class WelcomePresenterSpec: QuickSpec {
     private var routeActionHandler: FakeRouteActionHandler!
     private var dataStoreActionHandler: FakeDataStoreActionHandler!
     private var linkActionHandler: FakeLinkActionHandler!
+    private var accountActionHandler: FakeAccountActionHandler!
     private var accountStore: FakeAccountStore!
     private var dataStore: FakeDataStore!
     private var lifecycleStore: FakeLifecycleStore!
@@ -177,6 +191,7 @@ class WelcomePresenterSpec: QuickSpec {
                 self.routeActionHandler = FakeRouteActionHandler()
                 self.dataStoreActionHandler = FakeDataStoreActionHandler()
                 self.linkActionHandler = FakeLinkActionHandler()
+                self.accountActionHandler = FakeAccountActionHandler()
                 self.accountStore = FakeAccountStore()
                 self.dataStore = FakeDataStore()
                 self.lifecycleStore = FakeLifecycleStore()
@@ -186,6 +201,7 @@ class WelcomePresenterSpec: QuickSpec {
                         routeActionHandler: self.routeActionHandler,
                         dataStoreActionHandler: self.dataStoreActionHandler,
                         linkActionHandler: self.linkActionHandler,
+                        accountActionHandler: self.accountActionHandler,
                         accountStore: self.accountStore,
                         dataStore: self.dataStore,
                         lifecycleStore: self.lifecycleStore,
@@ -211,6 +227,32 @@ class WelcomePresenterSpec: QuickSpec {
                     it("hides the biometrics login button and label") {
                         expect(self.view.unlockButtonHiddenStub.events.last!.value.element).to(beTrue())
                         expect(self.view.lockImageHiddenStub.events.last!.value.element).to(beTrue())
+                    }
+                }
+
+                describe("when the user has old account information") {
+                    beforeEach {
+                        self.subject.onViewReady()
+                        self.accountStore.fakeOldAccountInformation.onNext(true)
+                    }
+
+                    it("launches an alert") {
+                        expect(self.view.alertControllerTitle).to(equal(Constant.string.reauthenticationRequired))
+                        expect(self.view.alertControllerMessage).to(equal(Constant.string.appUpdateDisclaimer))
+                        expect(self.view.alertControllerStyle).to(equal(UIAlertControllerStyle.alert))
+                    }
+
+                    describe("tapping Continue") {
+                        beforeEach {
+                            self.view.alertControllerButtons![0].tapObserver!.onNext(())
+                        }
+
+                        it("routes to FxA and sends the appropriate account action") {
+                            expect(self.routeActionHandler.invokeArgument).notTo(beNil())
+                            let argument = self.routeActionHandler.invokeArgument as! LoginRouteAction
+                            expect(argument).to(equal(LoginRouteAction.fxa))
+                            expect(self.accountActionHandler.invokeArgument).to(equal(AccountAction.oauthSignInMessageRead))
+                        }
                     }
                 }
 
