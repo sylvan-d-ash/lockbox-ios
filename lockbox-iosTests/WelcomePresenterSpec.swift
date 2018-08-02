@@ -247,12 +247,11 @@ class WelcomePresenterSpec: QuickSpec {
                             self.view.alertControllerButtons![0].tapObserver!.onNext(())
                         }
 
-                        it("resets the datastore, routes to FxA, and sends the appropriate account action") {
+                        it("routes to FxA, and sends the appropriate account action") {
                             expect(self.routeActionHandler.invokeArgument).notTo(beNil())
                             let argument = self.routeActionHandler.invokeArgument as! LoginRouteAction
                             expect(argument).to(equal(LoginRouteAction.fxa))
                             expect(self.accountActionHandler.invokeArgument).to(equal(AccountAction.oauthSignInMessageRead))
-                            expect(self.dataStoreActionHandler.invokeArgument).to(equal(DataStoreAction.reset))
                         }
                     }
                 }

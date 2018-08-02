@@ -23,6 +23,19 @@ protocol RootViewProtocol: class {
     func pushSettingView(view: SettingRouteAction)
 }
 
+struct OAuthProfile {
+    let oauthInfo: OAuthInfo?
+    let profile: Profile?
+}
+
+extension OAuthProfile: Equatable {
+    static func ==(lh: OAuthProfile, rh: OAuthProfile) -> Bool {
+        return// todo: update these when we can make profile and oauthinfo equatable
+                (lh.profile == nil) == (rh.profile == nil) &&
+                (lh.oauthInfo == nil) == (rh.oauthInfo == nil)
+    }
+}
+
 class RootPresenter {
     private weak var view: RootViewProtocol?
     private let disposeBag = DisposeBag()
@@ -64,17 +77,23 @@ class RootPresenter {
 
         // todo: update tests with populated oauth and profile info
         Observable.combineLatest(self.accountStore.oauthInfo, self.accountStore.profile)
+                .map { OAuthProfile(oauthInfo: $0.0, profile: $0.1) }
+                .distinctUntilChanged()
                 .bind { latest in
-                    if let oauthInfo = latest.0,
-                        let profile = latest.1 {
+                    if let oauthInfo = latest.oauthInfo,
+                        let profile = latest.profile {
                         self.dataStoreActionHandler.invoke(.updateCredentials(oauthInfo: oauthInfo, fxaProfile: profile))
-                    } else if latest.0 == nil {
+                    } else if latest.oauthInfo == nil && latest.profile == nil {
                         self.routeActionHandler.invoke(LoginRouteAction.welcome)
+                        self.dataStoreActionHandler.invoke(.reset)
                     }
                 }
                 .disposed(by: self.disposeBag)
 
-        self.dataStore.locked
+        Observable.combineLatest(self.dataStore.locked, self.accountStore.hasOldAccountInformation, self.dataStore.syncState)
+                .filter { !$0.1 && $0.2 != SyncState.NotSyncable }
+                .map { $0.0 }
+                .distinctUntilChanged()
                 .subscribe(onNext: { locked in
                     let route: RouteAction = locked ? LoginRouteAction.welcome : MainRouteAction.list
 
